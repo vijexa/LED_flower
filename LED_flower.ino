@@ -21,7 +21,8 @@ void setup()
 
 volatile float dimFactor = 1;
 volatile byte statusFlag = 1; // 0 - nothing special, 1 - needs to change mode, 2 - needs to toggle off, 3 - toggled off, 4 - needs to change brightness
-int mode = -1;
+char
+mode = -1;
 
 // light blue #77c5f3
 void loop() {
@@ -45,7 +46,7 @@ void loop() {
     byte i, fixed_i;
     for (i = 255; i > 0; i--) {
       // paying attention to Weber–Fechner law (logarithmic perception of brightness)
-      fixed_i = (1.0 / 256.0) * (i * i) + 1;
+      fixed_i = (1.0 / 256.0) * (i * i) + 1 - 0.004;
       setAll(fixed_i, fixed_i, fixed_i);
       // if button was released we are changing dimFactor
       if (!digitalRead(BUTTON_PIN)) {
@@ -65,14 +66,16 @@ void loop() {
 
 void nextMode() {
   mode++;
-  if (mode == 5) mode = 0;
+  if (mode == 7) mode = 0;
   while (statusFlag == 0) {
     switch (mode) {
-      case 0: rainbowCycle(10); break;
-      case 1: CylonCycleFade(0x00, 0x90, 0xff, 1); break;
-      case 2: RunningLights(0xff, 0xff, 0xff, 50); break;
-      case 3: TwinkleRandom(10, 50, false); break;
-      case 4: RGBLoop(); break;
+      case 0: RandomBreath(30); break;
+      case 1: CylonCycleFade(0x03, 0xA9, 0xF4, 1); break;
+      case 2: CylonCycleFade(0xE9, 0x1E, 0x63, 1); break;
+      case 3: CylonCycleFade(0xCD, 0xDC, 0x39, 1); break;
+      case 4: RunningLights(0xFF, 0xC0, 0x66, 50); break;
+      case 5: TwinkleRandom(10, 60, false); break;
+      case 6: RGBLoop(); break;
     }
   }
 }
@@ -96,7 +99,7 @@ ISR(TIMER1_COMPA_vect) {
   statusFlag = 4;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////// led mode functions
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// led mode functions
 
 void RGBLoop() {
   for (int j = 0; j < 3; j++ ) {
@@ -107,7 +110,7 @@ void RGBLoop() {
         case 1: setAll(0, k, 0); break;
         case 2: setAll(0, 0, k); break;
       }
-      showStrip();
+      FastLED.show();
       if (statusFlag) return;
       delay(3);
     }
@@ -118,7 +121,7 @@ void RGBLoop() {
         case 1: setAll(0, k, 0); break;
         case 2: setAll(0, 0, k); break;
       }
-      showStrip();
+      FastLED.show();
       if (statusFlag) return;
       delay(3);
     }
@@ -130,7 +133,7 @@ void TwinkleRandom(int Count, int SpeedDelay, boolean OnlyOne) {
 
   for (int i = 0; i < Count; i++) {
     setPixel(random(NUM_LEDS), random(0, 255), random(0, 255), random(0, 255));
-    showStrip();
+    FastLED.show();
     if (statusFlag) return;
     delay(SpeedDelay);
     if (OnlyOne) {
@@ -157,7 +160,7 @@ void RunningLights(byte red, byte green, byte blue, int WaveDelay) {
                ((sin(i + Position) * 127 + 128) / 255)*blue);
     }
 
-    showStrip();
+    FastLED.show();
     if (statusFlag) return;
     delay(WaveDelay);
   }
@@ -172,7 +175,7 @@ void rainbowCycle(int SpeedDelay) {
       c = Wheel(((i * 256 / NUM_LEDS) + j) & 255);
       setPixel(i, *c, *(c + 1), *(c + 2));
     }
-    showStrip();
+    FastLED.show();
     if (statusFlag) return;
     delay(SpeedDelay);
   }
@@ -203,28 +206,59 @@ byte * Wheel(byte WheelPos) {
 void CylonCycleFade(byte red, byte green, byte blue, int SpeedDelay) {
   int newRed, newGreen, newBlue;
   setAll(0, 0, 0);
+  
   for (int i = 0; i < NUM_LEDS; i++) {
     for (int j = 0; j < 255; j++) {
       newRed = map(j, 0, 255, 0, red);
       newGreen = map(j, 0, 255, 0, green);
       newBlue = map(j, 0, 255, 0, blue);
+      
       setPixel(i, (red - newRed) / 3, (green - newGreen) / 3, (blue - newBlue) / 3);
       setPixel(i + 1, red - (newRed / 1.5), green - (newGreen / 1.5), blue - (newBlue / 1.5));
       setPixel(i + 2, (red / 3) + (newRed / 1.5), (green / 3) + (newGreen / 1.5), (blue / 3) + (newBlue / 1.5));
       setPixel(i + 3, newRed / 3, newGreen / 3, newBlue / 3);
-      showStrip();
+      FastLED.show();
+      
       if (statusFlag) return;
       delay(SpeedDelay);
     }
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void showStrip() {
-  FastLED.show();
+void RandomBreath(int delaySpeed) {
+  int red, green, blue, newRed, newGreen, newBlue;
+  red = random(256);
+  green = random(256);
+  blue = random(256);
+  
+  // scaling brightness
+  float scalingFactor = 255 / max(red, max(green, blue));
+  red *= scalingFactor;
+  green *= scalingFactor;
+  blue *= scalingFactor;
+  
+  setAll(0, 0, 0);
+  char increment = 1;
+  byte i, fixed_i;
+  i = 1;
+  while(i > 0) {
+    i += increment;
+    if (i == 255) increment = -1;
+    
+    // paying attention to Weber–Fechner law (logarithmic perception of brightness)
+    fixed_i = (1.0 / 256.0) * (i * i) + 1 - 0.004;
+    
+    newRed = map(fixed_i, 0, 255, 0, red);
+    newGreen = map(fixed_i, 0, 255, 0, green);
+    newBlue = map(fixed_i, 0, 255, 0, blue);
+    setAll(newRed, newGreen, newBlue);
+    
+    if (statusFlag) return;
+    delay(delaySpeed);
+  }
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void setPixel(int Pixel, byte red, byte green, byte blue) {
   // circular movement
@@ -240,7 +274,7 @@ void setAll(byte red, byte green, byte blue) {
   for (int i = 0; i < NUM_LEDS; i++ ) {
     setPixel(i, red, green, blue);
   }
-  showStrip();
+  FastLED.show();
 }
 
 
