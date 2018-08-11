@@ -66,16 +66,17 @@ void loop() {
 
 void nextMode() {
   mode++;
-  if (mode == 7) mode = 0;
+  if (mode == 8) mode = 0;
   while (statusFlag == 0) {
     switch (mode) {
-      case 0: RandomBreath(30); break;
-      case 1: CylonCycleFade(0x03, 0xA9, 0xF4, 1); break;
-      case 2: CylonCycleFade(0xE9, 0x1E, 0x63, 1); break;
-      case 3: CylonCycleFade(0xCD, 0xDC, 0x39, 1); break;
-      case 4: RunningLights(0xFF, 0xC0, 0x66, 50); break;
-      case 5: TwinkleRandom(10, 60, false); break;
-      case 6: RGBLoop(); break;
+      case 0: RainbowCycle(10); break;
+      case 1: RandomBreath(30); break;
+      case 2: CylonCycleFade(0x03, 0xA9, 0xF4, 1); break;
+      case 3: CylonCycleFade(0xE9, 0x1E, 0x63, 1); break;
+      case 4: CylonCycleFade(0xCD, 0xDC, 0x39, 1); break;
+      case 5: RunningLights(0xFF, 0xC0, 0x66, 50); break;
+      case 6: TwinkleRandom(10, 60, false); break;
+      case 7: RGBLoop(); break;
     }
   }
 }
@@ -166,7 +167,7 @@ void RunningLights(byte red, byte green, byte blue, int WaveDelay) {
   }
 }
 
-void rainbowCycle(int SpeedDelay) {
+void RainbowCycle(int SpeedDelay) {
   byte *c;
   uint16_t i, j;
 
