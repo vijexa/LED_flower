@@ -1,5 +1,5 @@
 #include <FastLED.h>
-#define NUM_LEDS 10
+#define NUM_LEDS 72
 CRGB leds[NUM_LEDS];
 #define PIN 7
 #define BUTTON_PIN 3
@@ -69,13 +69,13 @@ void nextMode() {
   if (mode == 8) mode = 0;
   while (statusFlag == 0) {
     switch (mode) {
-      case 0: RainbowCycle(10); break;
-      case 1: RandomBreath(30); break;
+      case 0: RainbowCycleAll(300); break;
+      case 1: RainbowCycle(10); break;
       case 2: CylonCycleFade(0x03, 0xA9, 0xF4, 1); break;
       case 3: CylonCycleFade(0xE9, 0x1E, 0x63, 1); break;
-      case 4: CylonCycleFade(0xCD, 0xDC, 0x39, 1); break;
+      case 4: JustWhite(); break;
       case 5: RunningLights(0xFF, 0xC0, 0x66, 50); break;
-      case 6: TwinkleRandom(10, 60, false); break;
+      case 6: RandomBreath(30); break;
       case 7: RGBLoop(); break;
     }
   }
@@ -167,6 +167,32 @@ void RunningLights(byte red, byte green, byte blue, int WaveDelay) {
   }
 }
 
+void RainbowCycleAll(int SpeedDelay) {
+   unsigned int rgbColour[3];
+
+  // Start off with red.
+  rgbColour[0] = 255;
+  rgbColour[1] = 0;
+  rgbColour[2] = 0;  
+
+  // Choose the colours to increment and decrement.
+  for (int decColour = 0; decColour < 3; decColour += 1) {
+    int incColour = decColour == 2 ? 0 : decColour + 1;
+
+    // cross-fade the two colours.
+    for(int i = 0; i < 255; i += 1) {
+      rgbColour[decColour] -= 1;
+      rgbColour[incColour] += 1;
+      
+      setAll(rgbColour[0], rgbColour[1], rgbColour[2]);
+      
+      FastLED.show();
+      if (statusFlag) return;
+      delay(SpeedDelay);
+    }
+  }
+}
+
 void RainbowCycle(int SpeedDelay) {
   byte *c;
   uint16_t i, j;
@@ -181,6 +207,14 @@ void RainbowCycle(int SpeedDelay) {
     delay(SpeedDelay);
   }
 }
+
+void JustWhite() {
+  setAll(255, 255, 255);
+  if (statusFlag) return;
+  delay(100);
+}
+
+
 
 byte * Wheel(byte WheelPos) {
   static byte c[3];
